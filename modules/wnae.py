@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import ot
 
-from utils.mcmcUtils import sample_langevin
+from modules.mcmcUtils import sample_langevin
 from modules.modules import SampleBuffer, DummyDistribution
 from Logger import *
 
