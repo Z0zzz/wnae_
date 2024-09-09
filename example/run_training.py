@@ -1,10 +1,13 @@
 from importlib import import_module
 import torch
 
-from SVJanalysis.MLFramework.module.DataProcessor import DataProcessor   # Black magic to avoid import bug
 from trainer import TrainerWassersteinNormalizedAutoEncoder
-from loader.Loader import Loader
-from architectures.ae import Encoder, Decoder
+from loader import Loader
+from architectures import Encoder, Decoder
+
+import sys
+
+output_path = sys.argv[1]
 
 
 if torch.cuda.is_available():
@@ -12,8 +15,7 @@ if torch.cuda.is_available():
 else:
     device = torch.device('cpu')
 
-config = "configs.example"
-config = import_module(config)
+config = import_module("config")
 
 loader = Loader(
     device=device,
@@ -21,8 +23,8 @@ loader = Loader(
 )
 
 input_size = loader.input_size
-intermediate_architecture = (10, 10)
-bottleneck_size = 6
+intermediate_architecture = (64, 32, 16, 16)
+bottleneck_size = 4
 
 encoder = Encoder(
     input_size=input_size,
@@ -43,6 +45,7 @@ trainer = TrainerWassersteinNormalizedAutoEncoder(
     encoder=encoder,
     decoder=decoder,
     device=device,
+    output_path=output_path,
 )
 
 trainer.train()

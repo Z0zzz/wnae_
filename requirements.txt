@@ -1,7 +1,4 @@
-tqdm>=4.66.1
-numpy>=1.23.5
-POT>=0.9.1
-ROOT>=6.28.4
-torch>=2.1.0
-torchmetrics>=1.2.0
-torchview>=0.2.6
+numpy==1.23.5
+POT==0.9.1
+Singleton==0.1.0
+torch==2.1.0

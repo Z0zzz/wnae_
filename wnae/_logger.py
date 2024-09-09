@@ -2,7 +2,14 @@ import logging
 import logging.config
 from functools import reduce
 
-from Singleton import Singleton
+
+class Singleton(type):
+    _instances = {}
+    
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
 
 
 class CustomFormatter(logging.Formatter):
@@ -28,6 +35,7 @@ class CustomFormatter(logging.Formatter):
         log_fmt = self.formats.get(record.levelno)
         formatter = logging.Formatter(log_fmt)
         return formatter.format(record)
+
 
 class Logger(metaclass=Singleton):
     
