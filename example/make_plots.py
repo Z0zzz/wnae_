@@ -56,6 +56,8 @@ def main(output_path):
     metrics_file_name = f"{output_path}/training.csv"
     df = pd.read_csv(metrics_file_name)
 
+    x_max = max(df["epoch"])*1.1
+
     plt.figure()
     plt.plot(
         df["epoch"],
@@ -75,6 +77,7 @@ def main(output_path):
     )
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
+    plt.xlim((0, x_max))
     plt.legend()
     plt.savefig(f"{output_path}/loss.pdf")
     plt.savefig("loss.pdf")
@@ -90,6 +93,7 @@ def main(output_path):
     )
     plt.xlabel("Epoch")
     plt.ylabel("ROC AUC")
+    plt.xlim((0, x_max))
     plt.savefig(f"{output_path}/auc.pdf")
     plt.savefig("auc.pdf")
     plt.close()

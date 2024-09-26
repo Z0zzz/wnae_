@@ -23,8 +23,8 @@ loader = Loader(
 )
 
 input_size = loader.input_size
-intermediate_architecture = (64, 32, 16, 16)
-bottleneck_size = 4
+intermediate_architecture = (10, 10)
+bottleneck_size = 1
 
 encoder = Encoder(
     input_size=input_size,
@@ -46,6 +46,7 @@ trainer = TrainerWassersteinNormalizedAutoEncoder(
     decoder=decoder,
     device=device,
     output_path=output_path,
+    loss_function="wnae",  # can change to "ae" or "nae"
 )
 
 trainer.train()

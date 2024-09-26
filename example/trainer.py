@@ -22,6 +22,7 @@ class TrainerWassersteinNormalizedAutoEncoder():
             decoder,
             device,
             output_path,
+            loss_function="wnae",
         ):
         """
         Constructor of the specialized Trainer class.
@@ -33,6 +34,7 @@ class TrainerWassersteinNormalizedAutoEncoder():
         self.decoder = decoder
         self.device = device
         self.output_path = output_path
+        self.loss_function = loss_function
         self.metrics_tracker = {
             "epoch": [],
             "training_loss": [],
@@ -60,11 +62,17 @@ class TrainerWassersteinNormalizedAutoEncoder():
             x = batch[0]  # batch is a list of len 1 with the tensor inside
 
             optimizer.zero_grad()
-            loss, training_dict = self.model.train_step(x)
+            if self.loss_function == "ae":
+                loss, training_dict = self.model.train_step_ae(x)
+            elif self.loss_function == "nae":
+                loss, training_dict = self.model.train_step_nae(x)
+            elif self.loss_function == "wnae":
+                loss, training_dict = self.model.train_step(x)
             loss.backward()
             optimizer.step()
 
             monitored_quantities["loss"] += training_dict["loss"]
+            #print(training_dict["mcmc_data"]["samples"][-1][:10])
 
         monitored_quantities["loss"] /= n_batches
 
@@ -122,7 +130,7 @@ class TrainerWassersteinNormalizedAutoEncoder():
         training_loader = self.loader.training_loader
         validation_loader = self.loader.validation_loader
         validation_loader_no_batch = self.loader.validation_loader_no_batch
-        ood_loader_no_batch = self.loader.ood_loader_no_batch
+        ood_loader = self.loader.ood_loader
 
         best_epoch = 0
         lowest_validation_loss = np.inf
@@ -146,7 +154,7 @@ class TrainerWassersteinNormalizedAutoEncoder():
             validation_loss = validation_monitored_quantities["loss"]
 
             background_reco_errors = self.__evaluate(validation_loader_no_batch)["reco_errors"]
-            signal_reco_errors = self.__evaluate(ood_loader_no_batch)["reco_errors"]
+            signal_reco_errors = self.__evaluate(ood_loader)["reco_errors"]
             y_true = np.concatenate((np.zeros(len(background_reco_errors)), np.ones(len(signal_reco_errors))))
             y_pred = np.concatenate((background_reco_errors, signal_reco_errors))
             auc = roc_auc_score(y_true, y_pred)
@@ -187,7 +195,7 @@ class TrainerWassersteinNormalizedAutoEncoder():
                 log.info(f"Epoch {i_epoch}: early stopping")
                 break
 
-        self.__save_model_checkpoint(name="last_epooch")
+        self.__save_model_checkpoint(name="last_epoch")
 
         metrics_file = f"{self.output_path}/training.csv"
         log.info(f"Saving metrics file {metrics_file}")
@@ -205,29 +213,27 @@ class TrainerWassersteinNormalizedAutoEncoder():
 
         log.info("Starting model fitting")
 
-        if self.config.training_params["n_epochs"] > 0:
-
-            optimizer_args = {
-                "params": self.model.parameters(),
-                "lr": self.config.training_params["learning_rate"],
-            }
-            torch_optimizer = getattr(torch.optim, self.config.training_params["optimizer"])
-            optimizer = torch_optimizer(**optimizer_args)
-            
-            if self.config.training_params["lr_scheduler"] is not None:
-                lr_scheduler = getattr(torch.optim.lr_scheduler, self.config.training_params["lr_scheduler"])(
-                    optimizer,
-                    **self.config.training_params["lr_scheduler_args"]
-                )
-            else:
-                lr_scheduler = None
-
-            self.__fit(
-                n_epochs=self.config.training_params["n_epochs"],
-                optimizer=optimizer,
-                lr_scheduler=lr_scheduler,
-                es_patience=self.config.training_params["es_patience"],
+        optimizer_args = {
+            "params": self.model.parameters(),
+            "lr": self.config.training_params["learning_rate"],
+        }
+        torch_optimizer = getattr(torch.optim, self.config.training_params["optimizer"])
+        optimizer = torch_optimizer(**optimizer_args)
+        
+        if self.config.training_params["lr_scheduler"] is not None:
+            lr_scheduler = getattr(torch.optim.lr_scheduler, self.config.training_params["lr_scheduler"])(
+                optimizer,
+                **self.config.training_params["lr_scheduler_args"]
             )
+        else:
+            lr_scheduler = None
+
+        self.__fit(
+            n_epochs=self.config.training_params["n_epochs"],
+            optimizer=optimizer,
+            lr_scheduler=lr_scheduler,
+            es_patience=self.config.training_params["es_patience"],
+        )
 
         log.info("Finished training")
 

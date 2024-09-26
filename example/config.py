@@ -1,10 +1,10 @@
 training_params = {
-    "batch_size": 2048,
+    "batch_size": 256,
     "es_patience": 5000,
-    "n_epochs": 500,
+    "n_epochs": 80,
     
     "optimizer": "AdamW", # default
-    "learning_rate": 2e-4,
+    "learning_rate": 1e-2,
     "lr_scheduler": "ReduceLROnPlateau", # default
     "lr_scheduler_args": {
         "mode": "min",
