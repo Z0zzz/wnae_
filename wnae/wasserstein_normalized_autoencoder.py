@@ -152,7 +152,6 @@ class WNAE(torch.nn.Module):
 
         return ((y_true - y_pred) ** 2).view((y_true.shape[0], -1)).sum(dim=1) / n_dim
 
-
     def error(self, x, recon):
         return self.__mse(x, recon)
 
@@ -317,12 +316,6 @@ class WNAE(torch.nn.Module):
         elif self.sampling == "omi":
             return self.__sample_omi(n_sample, device, replay=replay)
 
-    def get_energies_and_z(self, x, negative_samples):
-        negative_energy, neg_z = self.energy_with_z(negative_samples)
-        positive_energy, pos_z = self.energy_with_z(x)
-
-        return positive_energy, negative_energy, pos_z, neg_z
-
     def __compute_emd(self, positive_samples, negative_samples):
         if int(ot.__version__.split(".")[1]) < 9:
             log.warning(f"Your optimal transport ot version is {ot.__version__}")
@@ -339,40 +332,56 @@ class WNAE(torch.nn.Module):
 
         return emd
 
-    def __wnae_step(self, x, train=True, compute_emd=True):
+    def __wnae_step(self, x, mcmc_replay=True, compute_emd=True, detach_negative_samples=False, run_mcmc=True):
         """WNAE step.
         
         Args:
             x (torch.Tensor): Data
-            train (bool, optional, default=True): Is the step for training (True) or validation (False)
+            mcmc_replay (bool, optional, default=True): Set to True if the MCMC
+                samples obtained should be added to the buffer for replay
         """
 
-        mcmc_replay = train
-
-        self.__set_shapes(x)
-        mcmc_data = self.sample(x ,replay=mcmc_replay)
-        negative_samples = mcmc_data.pop("sample_x")
-        positive_energy, negative_energy, pos_z, neg_z = self.get_energies_and_z(x, negative_samples)
-        if compute_emd:
-            loss = self.__compute_emd(x, negative_samples)
-        else:
-            loss = None
+        positive_energy, positive_z = self.energy_with_z(x)
+        ae_loss = positive_energy.mean()
 
         training_dict = {
-            "loss": loss.item() if loss is not None else None,
-            "positive_energy": positive_energy.mean().item(),
-            "negative_energy": negative_energy.mean().item(),
-            "negative_samples": negative_samples.detach().cpu(),
             "reco_errors": positive_energy.detach().cpu(),
-            "positive_z": pos_z.detach().cpu(),
-            "negative_z": neg_z.detach().cpu(),
-            "mcmc_data": mcmc_data,
+            "positive_energy": positive_energy.mean().item(),
+            "positive_z": positive_z.detach().cpu(),
         }
 
-        return loss, training_dict
+        if run_mcmc:
+            self.__set_shapes(x)
+            mcmc_data = self.sample(x, replay=mcmc_replay)
+            negative_samples = mcmc_data.pop("sample_x")
+            if detach_negative_samples:
+                negative_samples = negative_samples.detach()
+
+            negative_energy, negative_z = self.energy_with_z(negative_samples)
+
+            if compute_emd:
+                loss = self.__compute_emd(x, negative_samples)
+                training_dict["loss"] = loss.item()
+            else:
+                loss = None
+
+            nae_loss = positive_energy.mean() - negative_energy.mean()
+
+            training_dict.update({
+                "negative_samples": negative_samples.detach().cpu(),
+                "negative_energy": negative_energy.mean().item(),
+                "negative_z": negative_z.detach().cpu(),
+                "mcmc_data": mcmc_data,
+            })
+
+        else:
+            loss = None
+            nae_loss = None
+
+        return loss, ae_loss, nae_loss, training_dict
 
     def train_step(self, x):
-        """Training step of the wnae.utils.
+        """WANE training step.
         
         TODO: Write documentation!
 
@@ -388,7 +397,50 @@ class WNAE(torch.nn.Module):
                 - "positive_energy": the positive energy
         """
 
-        return self.__wnae_step(x, train=True)
+        loss, _, _, training_dict = self.__wnae_step(x, mcmc_replay=True)
+        return loss, training_dict
+
+    def train_step_ae(self, x, run_mcmc=False):
+        """Standard AE training.
+        
+        TODO: Write documentation!
+
+        Args:
+            x (torch.Tensor)
+        
+        Returns:
+            Loss function and a dict[str, any]: The first element returned is the loss
+            function on which to call backward. The second element returned is a dict
+            with many information concerning the training:
+
+                - "loss": the loss function
+                - "positive_energy": the positive energy
+        """
+
+        _, loss, _, training_dict = self.__wnae_step(x, mcmc_replay=True, detach_negative_samples=True, run_mcmc=run_mcmc)
+        training_dict["loss"] = loss.item()  # overwrite WNAE loss by AE loss
+        return loss, training_dict
+
+    def train_step_nae(self, x):
+        """Standard NAE training.
+        
+        TODO: Write documentation!
+
+        Args:
+            x (torch.Tensor)
+        
+        Returns:
+            Loss function and a dict[str, any]: The first element returned is the loss
+            function on which to call backward. The second element returned is a dict
+            with many information concerning the training:
+
+                - "loss": the loss function
+                - "positive_energy": the positive energy
+        """
+
+        _, _, loss, training_dict = self.__wnae_step(x, mcmc_replay=True, detach_negative_samples=True)
+        training_dict["loss"] = loss.item()  # overwrite WNAE loss by NAE loss
+        return loss, training_dict
 
     def validation_step(self, x):
         """Validation step of the wnae.utils.
@@ -396,7 +448,7 @@ class WNAE(torch.nn.Module):
         TODO: Write documentation!
         """
 
-        return self.__wnae_step(x, train=False, compute_emd=True)[1]
+        return self.__wnae_step(x, mcmc_replay=False, compute_emd=True)[3]
 
     def evaluate(self, x):
         """Perform WNAE evaluation.
@@ -404,7 +456,7 @@ class WNAE(torch.nn.Module):
         TODO: Write documentation!
         """
 
-        return self.__wnae_step(x, train=False, compute_emd=False)[1]
+        return self.__wnae_step(x, mcmc_replay=False, compute_emd=False)[3]
 
     def run_mcmc(self, x, replay=False):
         """Run MCMC.
