@@ -151,9 +151,25 @@ class WNAE(torch.nn.Module):
         n_dim = np.prod(y_true.shape[1:])
 
         return ((y_true - y_pred) ** 2).view((y_true.shape[0], -1)).sum(dim=1) / n_dim
+    
+    @staticmethod
+    def __mae(y_true, y_pred):
+        """Mean Squared Error (MSE).
 
-    def error(self, x, recon):
-        return self.__mse(x, recon)
+        Args:
+            y_true (torch.Tensor)
+            y_pred (torch.Tensor)
+        """
+
+        n_dim = np.prod(y_true.shape[1:])
+
+        return (abs(y_true - y_pred)).view((y_true.shape[0], -1)).sum(dim=1) / n_dim
+
+    def error(self, x, recon, score_method = "mse"):
+        if score_method == "mae":
+            return self.__mae(x, recon)
+        else:
+            return self.__mse(x, recon)
 
     def __normalize(self, z):
         """normalize to unit length"""
@@ -172,12 +188,12 @@ class WNAE(torch.nn.Module):
         else:
             return self.encoder(x)
 
-    def forward(self, x):
+    def forward(self, x, score_method="mse"):
         """Computes error"""
 
         z = self.encode(x)
         recon = self.decoder(z)
-        return self.error(x, recon)
+        return self.error(x, recon, score_method=score_method)
     
     def energy(self, x):
         return self.forward(x)

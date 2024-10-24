@@ -11,6 +11,7 @@ from sklearn.metrics import roc_auc_score
 from wnae import WNAE
 from wnae._logger import log
 
+import matplotlib.pyplot as plt
 
 class TrainerWassersteinNormalizedAutoEncoder():
     
@@ -27,7 +28,9 @@ class TrainerWassersteinNormalizedAutoEncoder():
         """
         Constructor of the specialized Trainer class.
         """
-
+        
+        self.epoch = 0
+        
         self.config = config
         self.loader = loader
         self.encoder = encoder
@@ -43,9 +46,30 @@ class TrainerWassersteinNormalizedAutoEncoder():
         }
 
         Path(self.output_path).mkdir(parents=True, exist_ok=True)
+        Path(f"{self.output_path}/sample_feature_1D_hist").mkdir(parents=True, exist_ok=True)
+        
         self.hyper_parameters = {}
         self.model = self.__get_model()
-
+    
+    def __make_sample_feature_1D_plot(self, positive_samples, negative_samples):
+        # print(positive_samples.shape)
+        # print(negative_samples.shape)
+                
+        # pick a feature from positive samples(input) and negative samples(mcmc) and plot their value distribution in one plot
+        for feature_idx in range(positive_samples.shape[1]):
+    
+            Path(f"{self.output_path}/sample_feature_1D_hist/feature_{feature_idx}").mkdir(parents=True, exist_ok=True)
+            # print(min(positive_samples[:,feature_idx]), max(positive_samples[:,feature_idx]))
+            # print(min(negative_samples[:,feature_idx]), max(negative_samples[:,feature_idx]))
+            
+            plt.figure()
+            plt.hist(positive_samples[:,feature_idx], bins=50, edgecolor='black', histtype='step', label="positive samples") 
+            plt.hist(negative_samples[:,feature_idx], bins=50, edgecolor='red', histtype='step', label="negative samples") 
+            plt.title(f"Feature {feature_idx} Epoch {self.epoch}")
+            plt.legend()
+            plt.savefig(f"{self.output_path}/sample_feature_1D_hist/feature_{feature_idx}/epoch_{self.epoch}.png")
+            plt.close()
+        
     def __train_epoch(self, training_loader, optimizer):
 
         self.model.train()
@@ -90,16 +114,26 @@ class TrainerWassersteinNormalizedAutoEncoder():
         # Can monitore more quantities than the loss, showing loss as example
         monitored_quantities = {
             "loss": 0.,
+            "reco_errors": None
         }
-
+        
+        bar_format = '{l_bar}{bar:10}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]'
         n_batches = 0
-        for batch in validation_loader:
+        for batch in tqdm(validation_loader, bar_format=bar_format):
             n_batches += 1
             x = batch[0]  # x is a list of len 1 with the tensor inside
 
             validation_dict = self.model.validation_step(x)
             monitored_quantities["loss"] += validation_dict["loss"]
+            if monitored_quantities["reco_errors"] == None:
+                monitored_quantities["reco_errors"] = validation_dict["reco_errors"]
+            else:
+                monitored_quantities["reco_errors"] = torch.concat((monitored_quantities["reco_errors"], validation_dict["reco_errors"]))
 
+            if n_batches == 1: # only store the MCMC samples for visualization purpose for one batch
+                monitored_quantities["mcmc_samples"] = validation_dict["mcmc_data"]["samples"][-1]
+                monitored_quantities["positive_samples"] = x.detach()
+                
         monitored_quantities["loss"] /= n_batches
 
         return monitored_quantities
@@ -137,24 +171,45 @@ class TrainerWassersteinNormalizedAutoEncoder():
         early_stopping_counter = 0
         early_stopped = False
 
-        for i_epoch in range(n_epochs):
-
+        for i_epoch in range(self.epoch, n_epochs):
+            
+            self.epoch = i_epoch
+            
             # Training and evaluation
-            log.info("\nEpoch %d/%d" % (i_epoch, n_epochs))
+            log.info("\nEpoch %d/%d Training" % (i_epoch, n_epochs))
 
             t0 = time.time()
+            
             training_monitored_quantities = self.__train_epoch(
                 training_loader,
                 optimizer,
             )
 
+            training_loss = training_monitored_quantities["loss"]
+            
+            if lr_scheduler is not None:
+                if isinstance(lr_scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                    lr_scheduler.step(training_loss)
+                else:
+                    lr_scheduler.step()
+                    
+            # lr_value = lr_scheduler._last_lr
+                
+            log.info("\nEpoch %d/%d Background Evaluation" % (i_epoch, n_epochs))
             validation_monitored_quantities = self.__validate_epoch(validation_loader)
-
+            
+            self.__make_sample_feature_1D_plot(validation_monitored_quantities["positive_samples"], validation_monitored_quantities["mcmc_samples"])
+            
             training_loss = training_monitored_quantities["loss"]
             validation_loss = validation_monitored_quantities["loss"]
-
-            background_reco_errors = self.__evaluate(validation_loader_no_batch)["reco_errors"]
+            background_reco_errors = validation_monitored_quantities["reco_errors"]
+            
+            # background_reco_errors = self.__evaluate(validation_loader_no_batch)["reco_errors"]
+            # log.info("\nEpoch %d/%d Background Evaluation" % (i_epoch, n_epochs))
+            
+            log.info("\nEpoch %d/%d OOD Evaluation" % (i_epoch, n_epochs))
             signal_reco_errors = self.__evaluate(ood_loader)["reco_errors"]
+            
             y_true = np.concatenate((np.zeros(len(background_reco_errors)), np.ones(len(signal_reco_errors))))
             y_pred = np.concatenate((background_reco_errors, signal_reco_errors))
             auc = roc_auc_score(y_true, y_pred)
@@ -250,4 +305,3 @@ class TrainerWassersteinNormalizedAutoEncoder():
         )
         model.to(self.device)
         return model
-
