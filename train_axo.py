@@ -32,12 +32,12 @@ x_test = torch.tensor(np.reshape(x_test,(x_test.shape[0],-1))).to(torch.float32)
 x_sig = torch.tensor(np.reshape(x_sig,(x_sig.shape[0],-1))).to(torch.float32).to(device)
 
 train_loader = data.DataLoader(
-            dataset=data.TensorDataset(x_train[:1000]),
+            dataset=data.TensorDataset(x_train),
             batch_size=batch_size,
         )
 
 val_loader = data.DataLoader(
-            dataset=data.TensorDataset(x_test[:1000]),
+            dataset=data.TensorDataset(x_test),
             batch_size=batch_size,
         )
 
