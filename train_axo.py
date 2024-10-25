@@ -93,5 +93,6 @@ trainer = TrainerWassersteinNormalizedAutoEncoder(
 )
 
 trainer.train()
-
+print("Saving...")
 trainer.save_train_plot()
+print("Done.")
