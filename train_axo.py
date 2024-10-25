@@ -8,10 +8,8 @@ from example.trainer import TrainerWassersteinNormalizedAutoEncoder
 from example.loader import Loader
 from example.architectures import Encoder, Decoder
 
-if torch.cuda.is_available():
-    device = torch.device('cuda')
-else:
-    device = torch.device('cpu')
+
+device = torch.device('cpu')
     
 batch_size = 1024
 
