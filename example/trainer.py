@@ -92,7 +92,7 @@ class TrainerWassersteinNormalizedAutoEncoder():
         ax2.tick_params(axis='y', labelcolor='blue')
         ax2.legend()
         fig.savefig(f"{self.output_path}/wnae/train_history.png")
-        # plt.close()
+        plt.close()
         
     def __train_epoch(self, training_loader, optimizer):
 

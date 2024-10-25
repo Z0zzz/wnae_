@@ -7,6 +7,7 @@ import torch
 from example.trainer import TrainerWassersteinNormalizedAutoEncoder
 from example.loader import Loader
 from example.architectures import Encoder, Decoder
+from wnae._logger import log
 
 
 device = torch.device('cpu')
@@ -68,7 +69,7 @@ intermediate_architecture_encoder = (28,15)
 intermediate_architecture_decoder = (24, 32, 64, 128, 57)
 bottleneck_size = 8
 output_path = "/pfvolcentral/notebooks/btagging"
-
+# output_path = "~/Desktop"
 encoder = Encoder(
     input_size=input_size,
     intermediate_architecture=intermediate_architecture_encoder,
@@ -93,6 +94,6 @@ trainer = TrainerWassersteinNormalizedAutoEncoder(
 )
 
 trainer.train()
-print("Saving...")
+log.info("Saving...")
 trainer.save_train_plot()
-print("Done.")
+log.info("Done.")
