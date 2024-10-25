@@ -1,7 +1,7 @@
 training_params = {
     "batch_size": 256,
     "es_patience": 5000,
-    "n_epochs": 80,
+    "n_epochs": 1,
     
     "optimizer": "AdamW", # default
     "learning_rate": 5e-4,

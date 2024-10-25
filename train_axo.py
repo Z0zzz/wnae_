@@ -31,12 +31,12 @@ x_test = torch.tensor(np.reshape(x_test,(x_test.shape[0],-1))).to(torch.float32)
 x_sig = torch.tensor(np.reshape(x_sig,(x_sig.shape[0],-1))).to(torch.float32).to(device)
 
 train_loader = data.DataLoader(
-            dataset=data.TensorDataset(x_train),
+            dataset=data.TensorDataset(x_train[:1000]),
             batch_size=batch_size,
         )
 
 val_loader = data.DataLoader(
-            dataset=data.TensorDataset(x_test),
+            dataset=data.TensorDataset(x_test[:1000]),
             batch_size=batch_size,
         )
 
@@ -67,7 +67,7 @@ input_size = x_train.shape[-1]
 intermediate_architecture_encoder = (28,15)
 intermediate_architecture_decoder = (24, 32, 64, 128, 57)
 bottleneck_size = 8
-output_path = "./temp"
+output_path = "/pfvolcentral/notebooks/btagging"
 
 encoder = Encoder(
     input_size=input_size,
@@ -94,3 +94,4 @@ trainer = TrainerWassersteinNormalizedAutoEncoder(
 
 trainer.train()
 
+trainer.save_train_plot()
