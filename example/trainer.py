@@ -46,8 +46,8 @@ class TrainerWassersteinNormalizedAutoEncoder():
         }
 
         Path(self.output_path).mkdir(parents=True, exist_ok=True)
-        Path(f"{self.output_path}/wnae").mkdir(parents=True, exist_ok=True)
-        Path(f"{self.output_path}/wnae/sample_feature_1D_hist").mkdir(parents=True, exist_ok=True)
+        Path(f"{self.output_path}/").mkdir(parents=True, exist_ok=True)
+        Path(f"{self.output_path}/sample_feature_1D_hist").mkdir(parents=True, exist_ok=True)
         
         self.hyper_parameters = {}
         self.model = self.__get_model()
@@ -59,7 +59,7 @@ class TrainerWassersteinNormalizedAutoEncoder():
         # pick a feature from positive samples(input) and negative samples(mcmc) and plot their value distribution in one plot
         for feature_idx in range(positive_samples.shape[1]):
     
-            Path(f"{self.output_path}/wnae/sample_feature_1D_hist/feature_{feature_idx}").mkdir(parents=True, exist_ok=True)
+            Path(f"{self.output_path}/sample_feature_1D_hist/feature_{feature_idx}").mkdir(parents=True, exist_ok=True)
             # print(min(positive_samples[:,feature_idx]), max(positive_samples[:,feature_idx]))
             # print(min(negative_samples[:,feature_idx]), max(negative_samples[:,feature_idx]))
             # print(f"generating for feature {feature_idx}")
@@ -68,7 +68,7 @@ class TrainerWassersteinNormalizedAutoEncoder():
             plt.hist(negative_samples[:,feature_idx], bins=50, edgecolor='red', histtype='step', label="negative samples") 
             plt.title(f"Feature {feature_idx} Epoch {self.epoch}")
             plt.legend()
-            plt.savefig(f"{self.output_path}/wnae/sample_feature_1D_hist/feature_{feature_idx}/epoch_{self.epoch}.png")
+            plt.savefig(f"{self.output_path}/sample_feature_1D_hist/feature_{feature_idx}/epoch_{self.epoch}.png")
             plt.close()
             
     def save_train_plot(self):
@@ -91,7 +91,7 @@ class TrainerWassersteinNormalizedAutoEncoder():
         ax2.set_ylabel('AUC', color='b')
         ax2.tick_params(axis='y', labelcolor='blue')
         ax2.legend()
-        fig.savefig(f"{self.output_path}/wnae/train_history.png")
+        fig.savefig(f"{self.output_path}/train_history.png")
         plt.close()
         
     def __train_epoch(self, training_loader, optimizer):
@@ -163,7 +163,7 @@ class TrainerWassersteinNormalizedAutoEncoder():
         return monitored_quantities
 
     def __save_model_checkpoint(self, name, state_dict_only=False):
-        path = f"{self.output_path}/wnae/{name}.pt"
+        path = f"{self.output_path}/{name}.pt"
         if state_dict_only:
             torch.save({"model_state_dict": self.model.state_dict()}, path)
         else:
