@@ -62,7 +62,7 @@ class TrainerWassersteinNormalizedAutoEncoder():
             Path(f"{self.output_path}/wnae/sample_feature_1D_hist/feature_{feature_idx}").mkdir(parents=True, exist_ok=True)
             # print(min(positive_samples[:,feature_idx]), max(positive_samples[:,feature_idx]))
             # print(min(negative_samples[:,feature_idx]), max(negative_samples[:,feature_idx]))
-            print(f"generating for feature {feature_idx}")
+            # print(f"generating for feature {feature_idx}")
             plt.figure()
             plt.hist(positive_samples[:,feature_idx], bins=50, edgecolor='black', histtype='step', label="positive samples") 
             plt.hist(negative_samples[:,feature_idx], bins=50, edgecolor='red', histtype='step', label="negative samples") 
