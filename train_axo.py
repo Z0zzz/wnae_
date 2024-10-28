@@ -70,6 +70,8 @@ intermediate_architecture_decoder = (24, 32, 64, 128, 57)
 bottleneck_size = 8
 output_path = "/pfvolcentral/notebooks/btagging/wnae3"
 # output_path = "~/Desktop"
+
+print("Saving to ", output_path)
 encoder = Encoder(
     input_size=input_size,
     intermediate_architecture=intermediate_architecture_encoder,
