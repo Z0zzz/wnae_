@@ -14,7 +14,7 @@ import shutil
 
 device = torch.device('cpu')
     
-batch_size = 1024
+batch_size = 2048
 
 # f = h5py.File("./data/newdata/Data.h5","r")
 f = h5py.File("/pfvolcentral/notebooks/btagging/Data.h5","r")
@@ -65,6 +65,7 @@ class MyLoader():
 loaders = MyLoader(train_loader, val_loader, val_loader_no_batch, sig_loader)
 
 config = import_module("example.config")
+config.training_params["batch_size"] = batch_size
 
 input_size = x_train.shape[-1]
 intermediate_architecture_encoder = (28,15)
