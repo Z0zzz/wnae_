@@ -14,8 +14,8 @@ device = torch.device('cpu')
     
 batch_size = 1024
 
-f = h5py.File("./data/newdata/Data.h5","r")
-# f = h5py.File("/pfvolcentral/notebooks/btagging/Data.h5","r")
+# f = h5py.File("./data/newdata/Data.h5","r")
+f = h5py.File("/pfvolcentral/notebooks/btagging/Data.h5","r")
 
 x_train = f["Background_data"]["Train"]["DATA"][:]
 x_test = f["Background_data"]["Test"]["DATA"][:]
