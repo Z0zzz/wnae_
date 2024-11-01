@@ -68,7 +68,7 @@ input_size = x_train.shape[-1]
 intermediate_architecture_encoder = (28,15)
 intermediate_architecture_decoder = (24, 32, 64, 128, 57)
 bottleneck_size = 8
-output_path = "/pfvolcentral/notebooks/btagging/wnae3"
+output_path = "/pfvolcentral/notebooks/btagging/wnae4"
 # output_path = "~/Desktop"
 
 config_file = f"{output_path}/config.json"
