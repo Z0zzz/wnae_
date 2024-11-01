@@ -9,6 +9,8 @@ from example.loader import Loader
 from example.architectures import Encoder, Decoder
 from wnae._logger import log
 from pathlib import Path
+import os
+import shutil
 
 device = torch.device('cpu')
     
@@ -70,7 +72,12 @@ intermediate_architecture_decoder = (24, 32, 64, 128, 57)
 bottleneck_size = 8
 output_path = "/pfvolcentral/notebooks/btagging/wnae5"
 # output_path = "~/Desktop"
-
+if os.path.exists(output_path) and os.path.isdir(output_path):
+    shutil.rmtree(output_path)
+    print(f"Deleted directory: {output_path}")
+else:
+    print(f"Directory does not exist: {output_path}")
+    
 config_file = f"{output_path}/config.json"
 Path(f"{output_path}/").mkdir(parents=True, exist_ok=True)
 with open(config_file, "w") as file:
