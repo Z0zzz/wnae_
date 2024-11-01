@@ -71,7 +71,7 @@ input_size = x_train.shape[-1]
 intermediate_architecture_encoder = (28,15)
 intermediate_architecture_decoder = (24, 32, 64, 128, 57)
 bottleneck_size = 8
-output_path = "/pfvolcentral/notebooks/btagging/wnae1"
+output_path = "/pfvolcentral/notebooks/btagging/wnae6"
 # output_path = "~/Desktop"
 if os.path.exists(output_path) and os.path.isdir(output_path):
     shutil.rmtree(output_path)
