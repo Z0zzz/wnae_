@@ -14,8 +14,8 @@ device = torch.device('cpu')
     
 batch_size = 1024
 
-# f = h5py.File("./data/newdata/Data.h5","r")
-f = h5py.File("/pfvolcentral/notebooks/btagging/Data.h5","r")
+f = h5py.File("./data/newdata/Data.h5","r")
+# f = h5py.File("/pfvolcentral/notebooks/btagging/Data.h5","r")
 
 x_train = f["Background_data"]["Train"]["DATA"][:]
 x_test = f["Background_data"]["Test"]["DATA"][:]
@@ -71,6 +71,10 @@ bottleneck_size = 8
 output_path = "/pfvolcentral/notebooks/btagging/wnae3"
 # output_path = "~/Desktop"
 
+config_file = f"{output_path}/config.json"
+with open(config_file, "w") as file:
+    json.dump(config.training_params, file, indent=4) 
+    
 print("Saving to ", output_path)
 encoder = Encoder(
     input_size=input_size,
