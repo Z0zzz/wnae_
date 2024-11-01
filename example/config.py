@@ -4,7 +4,7 @@ training_params = {
     "n_epochs": 400,
     
     "optimizer": "AdamW", # default
-    "learning_rate": 5e-3,
+    "learning_rate": 5e-4,
     "lr_scheduler": "ReduceLROnPlateau", # default
     "lr_scheduler_args": {
         "mode": "min",

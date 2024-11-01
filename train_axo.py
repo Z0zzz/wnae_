@@ -8,7 +8,7 @@ from example.trainer import TrainerWassersteinNormalizedAutoEncoder
 from example.loader import Loader
 from example.architectures import Encoder, Decoder
 from wnae._logger import log
-
+from pathlib import Path
 
 device = torch.device('cpu')
     
@@ -72,6 +72,7 @@ output_path = "/pfvolcentral/notebooks/btagging/wnae5"
 # output_path = "~/Desktop"
 
 config_file = f"{output_path}/config.json"
+Path(f"{output_path}/").mkdir(parents=True, exist_ok=True)
 with open(config_file, "w") as file:
     json.dump(config.training_params, file, indent=4) 
     

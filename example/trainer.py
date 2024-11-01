@@ -45,8 +45,6 @@ class TrainerWassersteinNormalizedAutoEncoder():
             "auc": [],
         }
 
-        Path(self.output_path).mkdir(parents=True, exist_ok=True)
-        Path(f"{self.output_path}/").mkdir(parents=True, exist_ok=True)
         Path(f"{self.output_path}/sample_feature_1D_hist").mkdir(parents=True, exist_ok=True)
         
         self.hyper_parameters = {}
@@ -194,7 +192,7 @@ class TrainerWassersteinNormalizedAutoEncoder():
         lowest_validation_loss = np.inf
         early_stopping_counter = 0
         early_stopped = False
-
+        
         for i_epoch in range(self.epoch, n_epochs):
             
             self.epoch = i_epoch
